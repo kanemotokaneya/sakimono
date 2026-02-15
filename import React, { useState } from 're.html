@@ -1,0 +1,320 @@
+import React, { useState } from 'react';
+import { 
+  TrendingDown, 
+  Activity, 
+  BarChart3, 
+  ShieldAlert, 
+  Target, 
+  Users, 
+  ArrowDownCircle, 
+  ArrowUpCircle,
+  AlertCircle,
+  ChevronRight,
+  Layers,
+  Map,
+  Zap
+} from 'lucide-react';
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('oi_map');
+
+  // 市場基本データ
+  const marketData = {
+    date: '2026-02-13',
+    price: 56941.97,
+    change: -697.87,
+    vi: 34.21,
+    futures: [
+      { label: 'ラージ', change: 1684, color: 'text-emerald-500' },
+      { label: 'mini', change: -28890, color: 'text-red-500' },
+      { label: 'TOPIX', change: 687, color: 'text-emerald-500' }
+    ],
+    optionsTotal: {
+      putChange: 10635,
+      callChange: 10662,
+      putTotalVal: 30586,
+      callTotalVal: 20397
+    }
+  };
+
+  // ⑥ オプション建玉分布（価格帯別・3月限）全データ
+  const oiData = [
+    { strike: 62000, p: 0, c: 5096, pChange: 0, cChange: -314 },
+    { strike: 61500, p: 0, c: 1073, pChange: 0, cChange: 0 },
+    { strike: 61000, p: 0, c: 4142, pChange: 0, cChange: 68 },
+    { strike: 60500, p: 0, c: 1221, pChange: 0, cChange: 10 },
+    { strike: 60000, p: 0, c: 12654, pChange: 0, cChange: 235 }, // 巨大な壁
+    { strike: 59500, p: 0, c: 2829, pChange: 0, cChange: 729 },
+    { strike: 59000, p: 0, c: 5507, pChange: 0, cChange: 283 },
+    { strike: 58500, p: 0, c: 2755, pChange: 0, cChange: 26 },
+    { strike: 58000, p: 0, c: 9997, pChange: 0, cChange: 426 }, // 重要な壁
+    { strike: 57500, p: 0, c: 3191, pChange: 0, cChange: 222 },
+    { strike: 57000, p: 4964, c: 1894, pChange: 216, cChange: 227 }, // ATM
+    { strike: 56500, p: 5617, c: 0, pChange: 873, cChange: 0 }, // サポート
+    { strike: 56000, p: 6055, c: 0, pChange: 409, cChange: 0 },
+    { strike: 55500, p: 4264, c: 0, pChange: 27, cChange: 0 },
+    { strike: 55000, p: 6368, c: 0, pChange: 373, cChange: 0 }, // 巨大なサポート
+    { strike: 54500, p: 3099, c: 0, pChange: 208, cChange: 0 },
+    { strike: 54000, p: 3677, c: 0, pChange: 18, cChange: 0 },
+    { strike: 53500, p: 3497, c: 0, pChange: -437, cChange: 0 },
+    { strike: 53000, p: 3369, c: 0, pChange: 616, cChange: 0 },
+    { strike: 52500, p: 3696, c: 0, pChange: -76, cChange: 0 },
+    { strike: 52000, p: 4222, c: 0, pChange: 387, cChange: 0 }
+  ];
+
+  // 節目価格帯の定義
+  const keyZones = [
+    { price: 60000, type: 'Resistance', label: '最大建玉・心理的節目', strength: 'High' },
+    { price: 58000, type: 'Resistance', label: '主要レジスタンス', strength: 'Medium' },
+    { price: 57750, type: 'Resistance', label: 'GS手口集中（上値の蓋）', strength: 'Medium' },
+    { price: 56500, type: 'Support', label: '野村手口・下値の床', strength: 'High' },
+    { price: 55000, type: 'Support', label: '主要建玉集中サポート', strength: 'High' }
+  ];
+
+  const StatBadge = ({ label, value, colorClass }) => (
+    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+      <div className="text-[10px] font-black text-slate-400 uppercase mb-1">{label}</div>
+      <div className={`text-lg font-black ${colorClass}`}>{value}</div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
+      {/* Header Section */}
+      <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded shadow-sm">BEARISH MARKET</span>
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Market Analysis Report | 2026.02.13</span>
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-2">オプション需給・節目分析</h1>
+          <p className="text-slate-500 font-medium">日経225 3月限オプション及び先物総合ダッシュボード</p>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatBadge label="日経平均" value={marketData.price.toLocaleString()} colorClass="text-slate-900" />
+          <StatBadge label="前日比" value={marketData.change.toLocaleString()} colorClass="text-red-500" />
+          <StatBadge label="日経VI" value={marketData.vi} colorClass="text-orange-500" />
+          <StatBadge label="mini建玉" value="-28,890" colorClass="text-red-600" />
+        </div>
+      </div>
+
+      {/* Main Analysis Container */}
+      <div className="max-w-6xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-slate-100 bg-slate-50/50 p-2 gap-2">
+          <button 
+            onClick={() => setActiveTab('oi_map')}
+            className={`flex-1 px-6 py-4 text-sm font-black rounded-2xl flex items-center justify-center gap-2 transition-all ${activeTab === 'oi_map' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <Map className="w-4 h-4" /> オプション建玉・節目価格帯
+          </button>
+          <button 
+            onClick={() => setActiveTab('analysis')}
+            className={`flex-1 px-6 py-4 text-sm font-black rounded-2xl flex items-center justify-center gap-2 transition-all ${activeTab === 'analysis' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <Zap className="w-4 h-4" /> 需給評価・手口分析
+          </button>
+        </div>
+
+        <div className="p-8">
+          {activeTab === 'oi_map' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              {/* Left Column: Strike Zone Map */}
+              <div className="lg:col-span-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-black flex items-center gap-2">
+                    <div className="w-2 h-6 bg-blue-600 rounded-full"></div>
+                    建玉分布状況 (3月限)
+                  </h3>
+                  <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest">
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded-sm"></div> PUT (下値警戒)</div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div> CALL (上値重い)</div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  {oiData.map((row) => (
+                    <div key={row.strike} className={`flex items-center gap-4 group py-1 px-2 rounded-lg transition-colors ${row.strike === 57000 ? 'bg-yellow-50/50 ring-1 ring-yellow-200' : 'hover:bg-slate-50'}`}>
+                      <div className="w-16 text-right font-black text-slate-400 group-hover:text-slate-900 transition-colors text-xs">{row.strike.toLocaleString()}</div>
+                      <div className="flex-1 flex items-center h-8 relative">
+                        {/* Put Side */}
+                        <div className="flex-1 flex justify-end pr-3 border-r border-slate-200 h-full items-center">
+                          {row.p > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[9px] font-bold ${row.pChange >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                                {row.pChange > 0 ? `+${row.pChange}` : row.pChange === 0 ? '' : row.pChange}
+                              </span>
+                              <div 
+                                className="h-5 bg-purple-500 rounded-l-sm relative shadow-sm" 
+                                style={{ width: `${Math.min(row.p / 130, 100)}%`, minWidth: '4px' }}
+                              >
+                                {row.p > 4000 && <span className="absolute -left-10 top-0.5 text-[9px] text-purple-600 font-black">{row.p.toLocaleString()}</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Call Side */}
+                        <div className="flex-1 flex justify-start pl-3 h-full items-center">
+                          {row.c > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="h-5 bg-blue-500 rounded-r-sm relative shadow-sm" 
+                                style={{ width: `${Math.min(row.c / 130, 100)}%`, minWidth: '4px' }}
+                              >
+                                {row.c > 4000 && <span className="absolute -right-10 top-0.5 text-[9px] text-blue-600 font-black">{row.c.toLocaleString()}</span>}
+                              </div>
+                              <span className={`text-[9px] font-bold ${row.cChange >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                                {row.cChange > 0 ? `+${row.cChange}` : row.cChange === 0 ? '' : row.cChange}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {row.strike === 57000 && (
+                          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                            <div className="bg-slate-900 text-white px-2 py-0.5 rounded-full text-[8px] font-black z-10 shadow-lg ring-2 ring-white">ATM</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: Strike Price Zones */}
+              <div className="lg:col-span-4 space-y-8">
+                <div>
+                  <h3 className="text-xl font-black flex items-center gap-2 mb-6">
+                    <div className="w-2 h-6 bg-red-600 rounded-full"></div>
+                    オプション節目価格帯
+                  </h3>
+                  <div className="space-y-4">
+                    {keyZones.map((zone, idx) => (
+                      <div key={idx} className={`p-4 rounded-2xl border-l-4 shadow-sm flex flex-col gap-1 transition-transform hover:scale-[1.02] bg-white ${zone.type === 'Resistance' ? 'border-red-500 bg-red-50/20' : 'border-emerald-500 bg-emerald-50/20'}`}>
+                        <div className="flex justify-between items-center">
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${zone.type === 'Resistance' ? 'text-red-600' : 'text-emerald-600'}`}>{zone.type}</span>
+                          <span className="bg-white/80 px-2 py-0.5 rounded text-[8px] font-bold border border-slate-100 uppercase">Strength: {zone.strength}</span>
+                        </div>
+                        <div className="text-2xl font-black text-slate-900">{zone.price.toLocaleString()}<span className="text-sm ml-1">円</span></div>
+                        <div className="text-xs text-slate-500 font-bold">{zone.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 rounded-3xl p-6 text-white relative overflow-hidden">
+                  <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Market Data Logic</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">プット取引代金</span>
+                      <span className="font-black text-purple-400">30,586 百万円</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">コール取引代金</span>
+                      <span className="font-black text-blue-400">20,397 百万円</span>
+                    </div>
+                    <div className="pt-4 border-t border-slate-800 text-[10px] text-slate-500 leading-relaxed italic">
+                      ※プットの代金がコールの約1.5倍。急落局面特有のヘッジ需要の強さが、55,000円〜56,500円の厚い建玉に反映されています。
+                    </div>
+                  </div>
+                  <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <ShieldAlert className="w-20 h-20" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'analysis' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                    <Layers className="text-blue-600" /> 先物建玉と需給評価
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {marketData.futures.map((f, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-sm font-black text-slate-500">{f.label}</span>
+                        <span className={`text-xl font-black ${f.color}`}>{f.change > 0 ? '+' : ''}{f.change.toLocaleString()} <span className="text-xs font-normal">枚</span></span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-6 p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                      <span className="text-red-600 font-black">miniの大幅減少 (-28,890枚)</span> は、短期勢の「総投げ」を明確に示しています。一方で <span className="text-emerald-600 font-black">ラージとTOPIXが増加</span> しており、担い手が投機から実需（機関投資家）へとシフトした「需給の入れ替わり」が発生しています。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                  <Users className="text-blue-600" /> 主要大口手口 (J-NET)
+                </h3>
+                <div className="space-y-3">
+                  <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-purple-600 font-black text-lg">P56500</span>
+                      <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase">Strong Support</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-bold text-slate-700">野村証券</span>
+                      <span className="font-black">1,000 枚</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2 font-medium">現在の最重要サポート。下値の床（地固め）を狙う強い意志。</p>
+                  </div>
+
+                  <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-blue-600 font-black text-lg">C57750</span>
+                      <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black uppercase">Resistance</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-bold text-slate-700">ゴールドマン証券</span>
+                      <span className="font-black">1,448 枚</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2 font-medium">58,000円手前での戻り売り。当面の「上値の蓋」として機能。</p>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                   <h3 className="text-sm font-black text-slate-500 uppercase mb-4 tracking-widest">市場コンセンサス (3月限)</h3>
+                   <div className="flex items-center gap-2 p-4 bg-slate-900 text-white rounded-2xl shadow-xl">
+                      <div className="flex-1 text-center">
+                        <div className="text-[10px] text-slate-500 font-bold uppercase">Lower Target</div>
+                        <div className="text-xl font-black">56,000</div>
+                      </div>
+                      <div className="h-8 w-px bg-slate-700"></div>
+                      <div className="flex-2 text-center px-4">
+                        <div className="text-[10px] text-blue-400 font-black uppercase">Target Range</div>
+                        <div className="text-xs text-slate-400 font-bold mt-1">SQに向けたリバウンド</div>
+                      </div>
+                      <div className="h-8 w-px bg-slate-700"></div>
+                      <div className="flex-1 text-center">
+                        <div className="text-[10px] text-slate-500 font-bold uppercase">Upper Target</div>
+                        <div className="text-xl font-black">58,200</div>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Meta */}
+      <div className="max-w-6xl mx-auto mt-10 flex flex-col md:flex-row items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] gap-4">
+        <div className="flex items-center gap-6">
+          <span>&copy; 2026 JPX PROFESSIONAL ANALYSIS</span>
+          <span>DATA SRC: J-NET / OSE / BLOOMBERG</span>
+        </div>
+        <div className="flex items-center gap-2 text-blue-500">
+          REPORT ID: {Math.random().toString(36).substr(2, 9).toUpperCase()} <ChevronRight className="w-3 h-3" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
