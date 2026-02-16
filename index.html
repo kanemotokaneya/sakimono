@@ -1,1 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>日経225先物 ダッシュボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        canvas { background: #f9f9f9; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h2>日経225先物 価格推移</h2>
+    <canvas id="myChart"></canvas>
+
+    <script>
+        // CSVファイルを読み込む関数
+        async function fetchData() {
+            const response = await fetch('data/nikkei_futures.csv');
+            const csvData = await response.text();
+            
+            // CSVをJSON形式にパース（解析）
+            Papa.parse(csvData, {
+                header: true,
+                complete: function(results) {
+                    renderChart(results.data);
+                }
+            });
+        }
+
+        // グラフを描画する関数
+        function renderChart(data) {
+            // 日付と終値の配列を作成
+            const labels = data.map(row => row.Date).filter(d => d);
+            const prices = data.map(row => row.Close).filter(p => p);
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '日経平均終値',
+                        data: prices,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                }
+            });
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
 
